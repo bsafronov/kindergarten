@@ -1,0 +1,200 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum LogEntity {
+  GROUP
+  KID
+  PARENT
+  VACCINATION
+  VACCINATION_TAG
+  ABSENCE
+  ABSENCE_TAG
+  NOTE
+  NOTE_TAG
+}
+
+enum LogAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+model Group {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdBy String
+  userIDs   String[]
+  adminIDs  String[]
+  title     String
+
+  kids            Kid[]
+  parents         Parent[]
+  vaccinations    Vaccination[]
+  vaccinationTags VaccinationTag[]
+  absences        Absence[]
+  absenceTags     AbsenceTag[]
+  notes           Note[]
+  noteTags        NoteTag[]
+  logs            Log[]
+}
+
+model Log {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  createdBy   String
+  seenByIDs   String[]
+  entityType  LogEntity
+  entityId    String?
+  entityLabel String?
+  actionType  LogAction
+
+  createdAt DateTime @default(now())
+
+  groupId String @db.ObjectId
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+}
+
+model Kid {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  createdBy String
+  updatedBy String?
+
+  firstName  String
+  lastName   String
+  middleName String
+  omsPolicy  String?
+  adress     String?
+  birthDate  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  groupId String @db.ObjectId
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  parentIDs String[] @db.ObjectId
+  parents   Parent[] @relation(fields: [parentIDs], references: [id])
+
+  vaccinations Vaccination[]
+  absences     Absence[]
+  notes        Note[]
+}
+
+model Parent {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdBy  String
+  updatedBy  String?
+  role       String
+  firstName  String?
+  lastName   String?
+  middleName String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  groupId String @db.ObjectId
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  kidIDs String[] @db.ObjectId
+  kids   Kid[]    @relation(fields: [kidIDs], references: [id])
+}
+
+model Vaccination {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  createdBy String
+  updatedBy String?
+  date      String
+
+  groupId String @db.ObjectId
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  kidId String @db.ObjectId
+  kid   Kid    @relation(fields: [kidId], references: [id], onDelete: Cascade)
+
+  tagId String         @db.ObjectId
+  tag   VaccinationTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+}
+
+model VaccinationTag {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdBy String
+  updatedBy String?
+  label     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  groupId String @db.ObjectId
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  vaccinations Vaccination[]
+}
+
+model Absence {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  createdBy String
+  updatedBy String?
+  date      String
+  reason    String?
+
+  groupId String @db.ObjectId
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  kidId String @db.ObjectId
+  kid   Kid    @relation(fields: [kidId], references: [id], onDelete: Cascade)
+
+  tagIDs String[]     @db.ObjectId
+  tags   AbsenceTag[] @relation(fields: [tagIDs], references: [id])
+}
+
+model AbsenceTag {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdBy String
+  updatedBy String?
+  label     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  groupId String @db.ObjectId
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  absenceIDs String[]  @db.ObjectId
+  absences   Absence[] @relation(fields: [absenceIDs], references: [id])
+}
+
+model Note {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdBy   String
+  updatedBy   String?
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  groupId String @db.ObjectId
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  kidId String @db.ObjectId
+  kid   Kid    @relation(fields: [kidId], references: [id], onDelete: Cascade)
+
+  tagIDs String[]  @db.ObjectId
+  tags   NoteTag[] @relation(fields: [tagIDs], references: [id])
+}
+
+model NoteTag {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdBy String
+  updatedBy String?
+  label     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  groupId String @db.ObjectId
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  noteIDs String[] @db.ObjectId
+  notes   Note[]   @relation(fields: [noteIDs], references: [id])
+}
